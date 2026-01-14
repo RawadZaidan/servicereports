@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-u#2)j_l*#j40@7%v8tyszqskswj%=#6w2^9z$%*80m0yfno-lp
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['https://medilabengineering.onrender.com', 'www.medilabengineering.onrender.com']
 
 
 # Application definition
@@ -133,3 +133,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+
