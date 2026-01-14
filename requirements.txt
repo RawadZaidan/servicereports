@@ -3,3 +3,5 @@ Pillow>=10.0.0
 pytz
 sqlparse
 python-dotenv
+gunicorn
+whitenoise
