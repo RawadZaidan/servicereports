@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="dashboard-sidebar">
+        <div class="sidebar-title">Filters</div>
+        
+        <div class="filter-group">
+            <a href="?status=" class="filter-item {% if not request.GET.status %}active{% endif %}">
+                <span>All Reports</span>
+                <span>&#8250;</span>
+            </a>
+            <a href="?status=Completed" class="filter-item {% if request.GET.status == 'Completed' %}active{% endif %}">
+                <span>Completed</span>
+                <span>&#8250;</span>
+            </a>
+            <a href="?status=Draft" class="filter-item {% if request.GET.status == 'Draft' %}active{% endif %}">
+                <span>Drafts</span>
+                <span>&#8250;</span>
+            </a>
+            <a href="?status=Pending" class="filter-item {% if request.GET.status == 'Pending' %}active{% endif %}">
+                <span>Pending</span>
+                <span>&#8250;</span>
+            </a>
+        </div>
+
+        <div class="sidebar-title">Quick Stats</div>
+        <div style="display: flex; gap: 10px;">
+            <div class="quick-stat-card" style="flex:1;">
+                <span class="stat-label">Total</span>
+                <span class="stat-value">{{ page_obj.paginator.count }}</span>
+            </div>
+            <!-- Ideal world: calculate pending in context processor or view context -->
+        </div>
+
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary" style="width: 100%; margin-top: 1rem; justify-content: center;">Reset Filters</a>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="dashboard-main">
+        <div class="dashboard-header">
+            <div class="header-content">
+                <h1 class="page-title">Service Reports</h1>
+                <p class="text-muted mobile-hide" style="margin-top: 0.25rem;">Recent field service activity</p>
+            </div>
+            <a href="{% url 'report_create' %}" class="btn btn-primary create-btn">
+                <span class="desktop-only">+ Create New Service Report</span>
+                <span class="mobile-only">+ New Report</span>
+            </a>
+        </div>
+
+        <!-- Mobile Filter Bar -->
+        <div class="mobile-filter-row mobile-only">
+            <div class="horizontal-scroll-filters">
+                <a href="?status=" class="mobile-filter-pill {% if not request.GET.status %}active{% endif %}">All</a>
+                <a href="?status=Completed" class="mobile-filter-pill {% if request.GET.status == 'Completed' %}active{% endif %}">Completed</a>
+                <a href="?status=Draft" class="mobile-filter-pill {% if request.GET.status == 'Draft' %}active{% endif %}">Drafts</a>
+                <a href="?status=Pending" class="mobile-filter-pill {% if request.GET.status == 'Pending' %}active{% endif %}">Pending</a>
+            </div>
+        </div>
+        
+        <!-- Search Bar -->
+        <form method="get" class="search-form">
+             <div class="search-input-wrapper">
+                <span class="search-icon">🔍</span>
+                <input type="text" name="q" placeholder="Search reports, clients, or equipment..." class="form-control" value="{{ request.GET.q }}">
+             </div>
+             {% if request.GET.status %}<input type="hidden" name="status" value="{{ request.GET.status }}">{% endif %}
+        </form>
+
+        <div class="modern-grid">
+            {% for report in reports %}
+            <div class="modern-card">
+                <div class="card-image-header">
+                    <!-- Placeholder or first image -->
+                    {% if report.images.first %}
+                        <img src="{{ report.images.first.image.url }}" alt="Report Image">
+                    {% else %}
+                        <div style="width:100%; height:100%; background: linear-gradient(45deg, #f1f5f9 25%, #e2e8f0 25%, #e2e8f0 50%, #f1f5f9 50%, #f1f5f9 75%, #e2e8f0 75%, #e2e8f0 100%); background-size: 20px 20px; opacity: 0.5;"></div>
+                    {% endif %}
+                    <span class="card-status-badge badge-{{ report.status|lower }}">{{ report.status }}</span>
+                </div>
+                
+                <div class="modern-card-body">
+                    <h3>{{ report.client_name }}</h3>
+                    <div class="modern-card-meta">
+                        <i class="icon-map-pin"></i> {{ report.location }}
+                    </div>
+
+                    <div class="modern-info-row">
+                        <span class="modern-info-label">Product</span>
+                        <div class="modern-info-value" style="max-width: 160px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                            {% with first_item=report.items.first count=report.items.count %}
+                                {% if first_item %}
+                                    {{ first_item.product.name }}{% if count > 1 %} <span style="color:var(--text-muted); font-size:0.8em;">(+{{ count|add:"-1" }})</span>{% endif %}
+                                {% else %}
+                                    <span style="color:var(--text-muted);">-</span>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                    <div class="modern-info-row">
+                        <span class="modern-info-label">Service Date</span>
+                        <span class="modern-info-value">{{ report.service_date|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+
+                <div class="modern-card-footer">
+                    <div class="engineer-avatar" title="{{ report.engineer.username }}">
+                        {{ report.engineer.username|make_list|first|upper }}
+                    </div>
+                    {% if report.status == 'Draft' %}
+                         <a href="{% url 'report_update' report.pk %}" class="view-link">Resume Editing &#9998;</a>
+                         <a href="{% url 'report_detail' report.pk %}" class="view-link">View Report &#8594;</a>
+                    {% else %}
+                        <a href="{% url 'report_detail' report.pk %}" class="view-link">View Report &#8594;</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div style="grid-column: 1/-1; text-align: center; padding: 4rem; color: #64748b;">
+                <h3>No reports found</h3>
+                <p>Try adjusting your search or filters.</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if is_paginated %}
+        <div class="pagination" style="margin-top: 2rem; display: flex; justify-content: center; gap: 0.5rem;">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-secondary">&lsaquo;</a>
+            {% endif %}
+            <span class="btn btn-primary" style="background: var(--primary-color); border-color: var(--primary-color);">{{ page_obj.number }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="btn btn-secondary">&rsaquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </main>
+</div>
+{% endblock %}
